@@ -1,0 +1,8 @@
+{
+    "bind":"127.0.0.1",
+    "port":"8080",
+    "hosts":{
+        "myblog.locale":"/srv/webroot",
+        "fileserver":"/srv/Downloads"
+    }
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"github.com/russross/blackfriday"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -42,11 +43,44 @@ func main() {
 }
 
 func routing(w http.ResponseWriter, r *http.Request) {
-	name := r.Host
-	if conf, ok := setting.Hosts[name]; ok {
-		log.Println(conf)
+	host_name := r.Host
+	if _, ok := setting.Hosts[host_name]; ok {
+		servermarkdown(w, r, host_name)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		errorTemplate.Execute(w, nil)
 	}
+}
+
+func servermarkdown(w http.ResponseWriter, r *http.Request, host string) {
+	// need additon path check
+	path, ismarkdow := get_file(setting.Hosts[host] + r.URL.Path)
+	if f, err := os.Open(path); err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		// return 404
+	} else {
+		body, _ := ioutil.ReadAll(f)
+		if ismarkdow {
+			w.Write(blackfriday.MarkdownCommon(body))
+		} else {
+			w.Write(body)
+		}
+	}
+}
+
+func get_file(path string) (string, bool) {
+	rawpath := path
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			path += ".html"
+		}
+	} else {
+		return path, false
+	}
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			path = rawpath + ".md"
+		}
+	}
+	return path, true
 }

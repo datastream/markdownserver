@@ -55,8 +55,9 @@ func routing(w http.ResponseWriter, r *http.Request) {
 
 func servermarkdown(w http.ResponseWriter, r *http.Request, host string) {
 	// need additon path check
-	path, ismarkdow := get_file(setting.Hosts[host], r.URL.Path)
-	if f, err := os.Open(path); err != nil {
+	path := get_real_uri(r.URL.Path)
+	file_path, ismarkdow := get_file(setting.Hosts[host], path)
+	if f, err := os.Open(file_path); err != nil {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
 		body, _ := ioutil.ReadAll(f)
@@ -69,16 +70,32 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, host string) {
 }
 
 func get_file(base_root string, path string) (string, bool) {
+	if path[len(path)-1] == '/' {
+		path += "index"
+	}
+	file_base := base_root + path
+	if _, err := os.Stat(file_base); err == nil {
+		return file_base, false
+	}
+	if _, err := os.Stat(file_base + ".html"); err == nil {
+		return file_base + ".html", false
+	}
+	if _, err := os.Stat(file_base + ".md"); err == nil {
+		return file_base + ".md", true
+	}
+	return "", false
+}
+
+func get_real_uri(path string) string {
 	tokens := strings.Split(path, "/")
 	var path_tokens []string
 	var real_path string
 	for i := range tokens {
 		if tokens[i] == ".." {
 			l := len(path_tokens)
-			if l > 0 {
-				path_tokens = path_tokens[:l-1]
-			} else {
-				path_tokens = path_tokens[:0]
+			path_tokens = path_tokens[:l-1]
+			if i == 1 {
+				break
 			}
 		} else {
 			path_tokens = append(path_tokens, tokens[i])
@@ -87,15 +104,5 @@ func get_file(base_root string, path string) (string, bool) {
 	for _, token := range path_tokens {
 		real_path += "/" + token
 	}
-	if real_path[len(real_path)-1] == '/' {
-		real_path += "index"
-	}
-	file_base := base_root + real_path
-	if _, err := os.Stat(file_base + ".html"); err == nil {
-		return file_base + ".html", false
-	}
-	if _, err := os.Stat(file_base + ".md"); err == nil {
-		return file_base + ".md", true
-	}
-	return "", false
+	return real_path
 }

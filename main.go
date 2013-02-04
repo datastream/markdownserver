@@ -99,13 +99,13 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	} else {
 		defer file.Close()
 		body, _ := ioutil.ReadAll(file)
-		w.Write(header(root_dir))
 		if ismarkdow {
+			w.Write(header(root_dir))
 			w.Write(blackfriday.MarkdownCommon(body))
+			w.Write(footer(root_dir))
 		} else {
 			w.Write(body)
 		}
-		w.Write(footer(root_dir))
 	}
 }
 

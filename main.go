@@ -55,11 +55,12 @@ func routing(w http.ResponseWriter, r *http.Request) {
 
 func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	// need additon path check
-	file_path, ismarkdow := get_file(root_dir, r.URL.Path)
-	if f, err := root_dir.Open(file_path); err != nil {
+	file, ismarkdow := get_file(root_dir, r.URL.Path)
+	if file == nil {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
-		body, _ := ioutil.ReadAll(f)
+		defer file.Close()
+		body, _ := ioutil.ReadAll(file)
 		if ismarkdow {
 			w.Write(blackfriday.MarkdownCommon(body))
 		} else {
@@ -68,18 +69,18 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	}
 }
 
-func get_file(root http.Dir, path string) (string, bool) {
-	if _, err := root.Open(path); err == nil {
-		return path, false
+func get_file(root http.Dir, path string) (http.File, bool) {
+	if fd, err := root.Open(path); err == nil {
+		return fd, false
 	}
-	if _, err := root.Open(path + "/index.html"); err == nil {
-		return path + "/index.html", false
+	if fd, err := root.Open(path + "/index.html"); err == nil {
+		return fd, false
 	}
-	if _, err := root.Open(path + ".md"); err == nil {
-		return path + ".md", true
+	if fd, err := root.Open(path + ".md"); err == nil {
+		return fd, true
 	}
-	if _, err := root.Open(path + "/index.md"); err == nil {
-		return path + "/index.md", true
+	if fd, err := root.Open(path + "/index.md"); err == nil {
+		return fd, true
 	}
-	return "", false
+	return nil, false
 }

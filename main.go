@@ -39,12 +39,32 @@ func main() {
 	}
 	log.Println(setting)
 	http.HandleFunc("/", routing)
+	http.HandleFunc("/images", static_img)
+	http.HandleFunc("/javascripts", static_js)
+	http.HandleFunc("/stylesheets", static_css)
 	http.ListenAndServe(setting.Bind+":"+setting.Port, nil)
 }
 
+func static_img(w http.ResponseWriter, r *http.Request) {
+	if root, ok := setting.Hosts[r.Host]; ok {
+		http.ServeFile(w, r, root+"/images")
+	}
+}
+
+func static_js(w http.ResponseWriter, r *http.Request) {
+	if root, ok := setting.Hosts[r.Host]; ok {
+		http.ServeFile(w, r, root+"/javascripts")
+	}
+}
+
+func static_css(w http.ResponseWriter, r *http.Request) {
+	if root, ok := setting.Hosts[r.Host]; ok {
+		http.ServeFile(w, r, root+"/stylesheets")
+	}
+}
+
 func routing(w http.ResponseWriter, r *http.Request) {
-	host_name := r.Host
-	if root, ok := setting.Hosts[host_name]; ok {
+	if root, ok := setting.Hosts[r.Host]; ok {
 		root_dir := http.Dir(root)
 		servermarkdown(w, r, root_dir)
 	} else {

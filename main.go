@@ -73,6 +73,24 @@ func routing(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func header(root_dir http.Dir) []byte {
+	var body []byte
+	fd, err := root_dir.Open("templates/header.tpl")
+	if err == nil {
+		body, _ = ioutil.ReadAll(fd)
+	}
+	return body
+}
+
+func footer(root_dir http.Dir) []byte {
+	var body []byte
+	fd, err := root_dir.Open("templates/footer.tpl")
+	if err == nil {
+		body, _ = ioutil.ReadAll(fd)
+	}
+	return body
+}
+
 func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	// need additon path check
 	file, ismarkdow := get_file(root_dir, r.URL.Path)
@@ -81,11 +99,13 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	} else {
 		defer file.Close()
 		body, _ := ioutil.ReadAll(file)
+		w.Write(header(root_dir))
 		if ismarkdow {
 			w.Write(blackfriday.MarkdownCommon(body))
 		} else {
 			w.Write(body)
 		}
+		w.Write(footer(root_dir))
 	}
 }
 

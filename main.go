@@ -104,6 +104,11 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	file, ismarkdow := get_file(root_dir, r.URL.Path)
 	if file == nil {
 		w.WriteHeader(http.StatusNotFound)
+		error_page, err := template.ParseFiles(string(root_dir) +
+			"/error.html")
+		if err == nil {
+			error_page.Execute(w, nil)
+		}
 	} else {
 		defer file.Close()
 		body, _ := ioutil.ReadAll(file)

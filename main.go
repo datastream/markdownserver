@@ -41,7 +41,7 @@ func main() {
 	http.HandleFunc("/", routing)
 	http.ListenAndServe(setting.Bind+":"+setting.Port, nil)
 }
-
+//url routing
 func routing(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", detect_file_type(r.URL.Path))
 	if root, ok := setting.Hosts[r.Host]; ok {
@@ -52,6 +52,7 @@ func routing(w http.ResponseWriter, r *http.Request) {
 		errorTemplate.Execute(w, nil)
 	}
 }
+// return file mime
 func detect_file_type(path string) string {
 	var f_t string
 	reg, _ := regexp.Compile("\\.(css|js|jpg|jpeg|png|xml|rss|gif|svg)$")
@@ -80,6 +81,7 @@ func detect_file_type(path string) string {
 	}
 	return f_t
 }
+//templates for header part
 func header(root_dir http.Dir) []byte {
 	var body []byte
 	fd, err := root_dir.Open("templates/header.tpl")
@@ -88,7 +90,7 @@ func header(root_dir http.Dir) []byte {
 	}
 	return body
 }
-
+//templates for footer part
 func footer(root_dir http.Dir) []byte {
 	var body []byte
 	fd, err := root_dir.Open("templates/footer.tpl")
@@ -97,7 +99,7 @@ func footer(root_dir http.Dir) []byte {
 	}
 	return body
 }
-
+//returm markdown file
 func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	file, ismarkdow := get_file(root_dir, r.URL.Path)
 	if file == nil {
@@ -114,7 +116,7 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 		}
 	}
 }
-
+//try get file
 func get_file(root http.Dir, path string) (http.File, bool) {
 	if path[len(path)-1] == '/' {
 		path += "index"

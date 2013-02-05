@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 var (
@@ -37,33 +38,12 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
-	log.Println(setting)
 	http.HandleFunc("/", routing)
-	http.HandleFunc("/images", static_img)
-	http.HandleFunc("/javascripts", static_js)
-	http.HandleFunc("/stylesheets", static_css)
 	http.ListenAndServe(setting.Bind+":"+setting.Port, nil)
 }
 
-func static_img(w http.ResponseWriter, r *http.Request) {
-	if root, ok := setting.Hosts[r.Host]; ok {
-		http.ServeFile(w, r, root+"/images")
-	}
-}
-
-func static_js(w http.ResponseWriter, r *http.Request) {
-	if root, ok := setting.Hosts[r.Host]; ok {
-		http.ServeFile(w, r, root+"/javascripts")
-	}
-}
-
-func static_css(w http.ResponseWriter, r *http.Request) {
-	if root, ok := setting.Hosts[r.Host]; ok {
-		http.ServeFile(w, r, root+"/stylesheets")
-	}
-}
-
 func routing(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", detect_file_type(r.URL.Path))
 	if root, ok := setting.Hosts[r.Host]; ok {
 		root_dir := http.Dir(root)
 		servermarkdown(w, r, root_dir)
@@ -72,7 +52,22 @@ func routing(w http.ResponseWriter, r *http.Request) {
 		errorTemplate.Execute(w, nil)
 	}
 }
-
+func detect_file_type(path string) string {
+	var f_t string
+	reg, _ := regexp.Compile("(stylesheets|javascripts|images)")
+	rst := reg.FindString(path)
+	switch rst {
+	case "stylesheets":
+		f_t = "text/css"
+	case "javascripts":
+		f_t = "application/javascript"
+	case "images":
+		f_t = "image/jpeg"
+	default:
+		f_t = "text/html"
+	}
+	return f_t
+}
 func header(root_dir http.Dir) []byte {
 	var body []byte
 	fd, err := root_dir.Open("templates/header.tpl")
@@ -92,7 +87,6 @@ func footer(root_dir http.Dir) []byte {
 }
 
 func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
-	// need additon path check
 	file, ismarkdow := get_file(root_dir, r.URL.Path)
 	if file == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -110,16 +104,16 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 }
 
 func get_file(root http.Dir, path string) (http.File, bool) {
+	if path[len(path)-1] == '/' {
+		path += "index"
+	}
 	if fd, err := root.Open(path); err == nil {
 		return fd, false
 	}
-	if fd, err := root.Open(path + "/index.html"); err == nil {
+	if fd, err := root.Open(path + ".html"); err == nil {
 		return fd, false
 	}
 	if fd, err := root.Open(path + ".md"); err == nil {
-		return fd, true
-	}
-	if fd, err := root.Open(path + "/index.md"); err == nil {
 		return fd, true
 	}
 	return nil, false

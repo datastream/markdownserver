@@ -54,15 +54,27 @@ func routing(w http.ResponseWriter, r *http.Request) {
 }
 func detect_file_type(path string) string {
 	var f_t string
-	reg, _ := regexp.Compile("(stylesheets|javascripts|images)")
+	reg, _ := regexp.Compile("\\.(css|js|jpg|jpeg|png|xml|rss|gif|svg)$")
 	rst := reg.FindString(path)
 	switch rst {
-	case "stylesheets":
+	case ".css":
 		f_t = "text/css"
-	case "javascripts":
+	case ".js":
 		f_t = "application/javascript"
-	case "images":
+	case ".jpg":
 		f_t = "image/jpeg"
+	case ".jpeg":
+		f_t = "image/jpeg"
+	case ".png":
+		f_t = "image/png"
+	case ".xml":
+		f_t = "text/xml"
+	case ".rss":
+		f_t = "text/xml"
+	case ".gif":
+		f_t = "image/gif"
+	case ".svg":
+		f_t = "image/svg+xml"
 	default:
 		f_t = "text/html"
 	}

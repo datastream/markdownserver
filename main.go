@@ -9,11 +9,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 )
 
 var (
-	conf = flag.String("-c", "markdown.json", "markdown server config")
+	conf     = flag.String("-c", "markdown.json", "markdown server config")
+	mimeconf = flag.String("-m", "mime.json", "markdown server mime config")
 )
 
 type Setting struct {
@@ -24,6 +24,7 @@ type Setting struct {
 
 var setting Setting
 var errorTemplate, _ = template.ParseFiles("error.html")
+var mime MIMETypes
 
 func main() {
 	flag.Parse()
@@ -38,13 +39,18 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+	mime = NewMIME(*mimeconf)
+	if mime == nil {
+		log.Println("mime config not found")
+		os.Exit(1)
+	}
 	http.HandleFunc("/", routing)
 	http.ListenAndServe(setting.Bind+":"+setting.Port, nil)
 }
 
 //url routing
 func routing(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", detect_file_type(r.URL.Path))
+	w.Header().Set("Content-Type", mime.DetectMIME(r.URL.Path))
 	if root, ok := setting.Hosts[r.Host]; ok {
 		root_dir := http.Dir(root)
 		servermarkdown(w, r, root_dir)
@@ -52,36 +58,6 @@ func routing(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		errorTemplate.Execute(w, nil)
 	}
-}
-
-// return file mime
-func detect_file_type(path string) string {
-	var f_t string
-	reg, _ := regexp.Compile("\\.(css|js|jpg|jpeg|png|xml|rss|gif|svg)$")
-	rst := reg.FindString(path)
-	switch rst {
-	case ".css":
-		f_t = "text/css"
-	case ".js":
-		f_t = "application/javascript"
-	case ".jpg":
-		f_t = "image/jpeg"
-	case ".jpeg":
-		f_t = "image/jpeg"
-	case ".png":
-		f_t = "image/png"
-	case ".xml":
-		f_t = "text/xml"
-	case ".rss":
-		f_t = "text/xml"
-	case ".gif":
-		f_t = "image/gif"
-	case ".svg":
-		f_t = "image/svg+xml"
-	default:
-		f_t = "text/html"
-	}
-	return f_t
 }
 
 //templates for header part

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"github.com/russross/blackfriday"
 	"html/template"
@@ -9,11 +8,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
-	conf     = flag.String("-c", "markdown.json", "markdown server config")
-	mimeconf = flag.String("-m", "mime.json", "markdown server mime config")
+	conf     = flag.String("f", "markdown.json", "server config")
+	mimeconf = flag.String("m", "mime.json", "mime config")
 )
 
 type Setting struct {
@@ -22,26 +23,35 @@ type Setting struct {
 	Hosts map[string]string `json:"hosts"`
 }
 
-var setting Setting
+var setting *Setting
 var errorTemplate, _ = template.ParseFiles("error.html")
 var mime MIMETypes
 
 func main() {
 	flag.Parse()
-	config_file, err := os.Open(*conf)
-	config, err := ioutil.ReadAll(config_file)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-	config_file.Close()
-	if err := json.Unmarshal(config, &setting); err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
+	reloadchan := make(chan os.Signal, 1)
+	signal.Notify(reloadchan, syscall.SIGHUP)
+	go func() {
+		<-reloadchan
+		log.Println("reload config")
+		m := NewMIME(*mimeconf)
+		if m != nil {
+			mime = m
+		}
+		s := read_condig(*conf)
+		if s != nil {
+			setting = s
+		}
+	}()
+
 	mime = NewMIME(*mimeconf)
 	if mime == nil {
 		log.Println("mime config not found")
+		os.Exit(1)
+	}
+	setting = read_condig(*conf)
+	if setting == nil {
+		log.Println("server config not found")
 		os.Exit(1)
 	}
 	http.HandleFunc("/", routing)

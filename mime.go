@@ -12,6 +12,7 @@ type MIMETypes map[string]string
 
 func NewMIME(file string) MIMETypes {
 	fd, err := os.Open(file)
+	defer fd.Close()
 	if err != nil {
 		return nil
 	}

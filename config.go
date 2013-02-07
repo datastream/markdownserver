@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"os"
 	"io/ioutil"
 	"log"
+	"os"
 )
+
 func read_condig(file string) *Setting {
 	var setting Setting
 	config_file, err := os.Open(*conf)

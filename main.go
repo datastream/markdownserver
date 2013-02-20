@@ -68,6 +68,8 @@ func routing(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		errorTemplate.Execute(w, nil)
 	}
+	log.Print(r.RemoteAddr + " " + r.Method + " " + r.RequestURI +
+		" " + r.Host)
 }
 
 //returm markdown file

@@ -2,6 +2,7 @@
     "bind":"127.0.0.1",
     "port":"8080",
     "hosts":{
+        "127.0.0.1:8080":"/Users/datastream/projects/datastream.github.com/markdown",
         "myblog.locale":"/srv/webroot",
         "fileserver":"/srv/Downloads"
     }

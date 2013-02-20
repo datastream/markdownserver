@@ -90,7 +90,11 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 		}
 	} else {
 		defer file.Close()
-		body, _ := ioutil.ReadAll(file)
+		body, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 		if ismarkdow {
 			headertemplate, err := template.ParseFiles(
 				string(root_dir) + "/templates/header.tpl")

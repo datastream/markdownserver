@@ -70,26 +70,6 @@ func routing(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//templates for header part
-func header(root_dir http.Dir) []byte {
-	var body []byte
-	fd, err := root_dir.Open("templates/header.tpl")
-	if err == nil {
-		body, _ = ioutil.ReadAll(fd)
-	}
-	return body
-}
-
-//templates for footer part
-func footer(root_dir http.Dir) []byte {
-	var body []byte
-	fd, err := root_dir.Open("templates/footer.tpl")
-	if err == nil {
-		body, _ = ioutil.ReadAll(fd)
-	}
-	return body
-}
-
 //returm markdown file
 func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 	file, ismarkdow := get_file(root_dir, r.URL.Path)
@@ -104,9 +84,21 @@ func servermarkdown(w http.ResponseWriter, r *http.Request, root_dir http.Dir) {
 		defer file.Close()
 		body, _ := ioutil.ReadAll(file)
 		if ismarkdow {
-			w.Write(header(root_dir))
+			headertemplate, err := template.ParseFiles(
+				string(root_dir) + "/templates/header.tpl")
+			if err == nil {
+				headertemplate.Execute(w, nil)
+			} else {
+				log.Println("header error", err)
+			}
 			w.Write(blackfriday.MarkdownCommon(body))
-			w.Write(footer(root_dir))
+			footertemplate, err := template.ParseFiles(
+				string(root_dir) + "/templates/footer.tpl")
+			if err == nil {
+				footertemplate.Execute(w, nil)
+			} else {
+				log.Println("footer error", err)
+			}
 		} else {
 			w.Write(body)
 		}

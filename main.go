@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var (
@@ -55,7 +56,13 @@ func main() {
 		os.Exit(1)
 	}
 	http.HandleFunc("/", routing)
-	http.ListenAndServe(setting.Bind+":"+setting.Port, nil)
+	server := &http.Server{
+		Addr:         setting.Bind + ":" + setting.Port,
+		Handler:      nil,
+		ReadTimeout:  time.Second * 5,
+		WriteTimeout: time.Second * 5,
+	}
+	server.ListenAndServe()
 }
 
 //url routing
@@ -68,8 +75,7 @@ func routing(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		errorTemplate.Execute(w, nil)
 	}
-	log.Print(r.RemoteAddr + " " + r.Method + " " + r.RequestURI +
-		" " + r.Host)
+	log.Println(r.RemoteAddr, r.Method, r.RequestURI, r.Host)
 }
 
 //returm markdown file

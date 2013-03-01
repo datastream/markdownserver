@@ -3,6 +3,7 @@
     "htm":"text/html",
     "shtml":"text/html",
     "css":"text/css",
+    "json":"application/json",
     "xml":"text/xml",
     "rss":"text/xml",
     "gif":"image/gif",
